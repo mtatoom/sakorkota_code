@@ -21,6 +21,11 @@ php artisan migrate --path=database/migrations/landlord --database=mysql
 php artisan make:model Tenant
 php artisan make:model Domaine
 
-Il faut bien préciser la connexion par défaut dans app/Models/Tenant.php
-mysql ou mysql_secondaire
+# Il faut bien préciser la connexion par défaut dans app/Models/Tenant.php
 
+mysql ou mysql_secondaire
+protected $connection ='mysql'
+
+# lister les champs que Laravel a le droit de remplir
+
+protected $fillable = ['id','nom_boutique',db_name, db_password]
