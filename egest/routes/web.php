@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -17,4 +18,13 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+
+Route::middleware(['tenant'])->group(function () {
+    Route::get('/test-db', function () {
+        return response()->json([
+            'status' => 'success',
+            'database' => DB::connection('mysql_secondaire')->getDatabaseName()
+        ]);
+    });
+});
 require __DIR__.'/auth.php';
