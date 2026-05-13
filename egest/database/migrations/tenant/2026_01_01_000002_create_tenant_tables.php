@@ -8,92 +8,92 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('utilisateurs', function (Blueprint $table) {
+        Schema::connection('mysql_secondaire')->create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('nom');
-            $table->string('email', 191)->unique();
-            $table->string('mot_de_passe');
-            $table->enum('role', ['admin', 'manager', 'vendeur'])->default('vendeur');
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->string('password');
+            $table->string('role')->default('vendeur');
             $table->timestamps();
         });
 
-        Schema::create('categories', function (Blueprint $table) {
+        Schema::connection('mysql_secondaire')->create('categories', function (Blueprint $table) {
             $table->id();
             $table->foreignId('parent_id')->nullable()->constrained('categories')->onDelete('cascade');
-            $table->string('nom', 100);
-            $table->string('slug', 191)->unique();
+            $table->string('name');
+            $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->timestamps();
         });
-
-        Schema::create('produits', function (Blueprint $table) {
+        Schema::connection('mysql_secondaire')->create('customers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('categorie_id')->nullable()->constrained('categories')->onDelete('set null');
-            $table->string('sku', 100)->unique();
-            $table->string('nom');
+            $table->string('name');
+            $table->string('phone')->nullable();
+            $table->string('email')->nullable();
+            $table->text('address')->nullable();
+            $table->decimal('total_spent', 15, 2)->default(0);
+            $table->timestamps();
+        });
+
+        Schema::connection('mysql_secondaire')->create('products', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('category_id')->constrained()->onDelete('cascade');
+            $table->string('sku')->unique();
+            $table->string('name');
             $table->text('description')->nullable();
-            $table->string('cible', 191)->nullable();
-            $table->decimal('prix_achat', 12, 2)->default(0);
-            $table->decimal('prix_vente', 12, 2);
-            $table->integer('quantite_stock')->default(0);
-            $table->integer('seuil_alerte')->default(5);
-            $table->boolean('est_actif')->default(true);
+            $table->string('target')->nullable(); // Ancien 'cible'
+            $table->decimal('purchase_price', 15, 2);
+            $table->decimal('sale_price', 15, 2);
+            $table->integer('stock_quantity')->default(0);
+            $table->integer('alert_threshold')->default(5);
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
 
-        Schema::create('clients', function (Blueprint $table) {
+
+        Schema::connection('mysql_secondaire')->create('sales', function (Blueprint $table) {
             $table->id();
-            $table->string('nom_complet');
-            $table->string('telephone', 20)->nullable();
-            $table->string('email', 191)->nullable();
-            $table->text('adresse')->nullable();
-            $table->decimal('total_depense', 12, 2)->default(0);
+            $table->string('order_number')->unique();
+            $table->foreignId('customer_id')->constrained();
+            $table->foreignId('user_id')->constrained();
+            $table->decimal('total_excl_tax', 15, 2); // HT
+            $table->decimal('total_incl_tax', 15, 2); // TTC
+            $table->decimal('delivery_fees', 15, 2)->default(0);
+            $table->string('payment_status');
+            $table->string('delivery_status');
+            $table->string('payment_method');
+            $table->dateTime('sale_date');
             $table->timestamps();
         });
-
-        Schema::create('ventes', function (Blueprint $table) {
+        
+        Schema::connection('mysql_secondaire')->create('sale_items', function (Blueprint $table) {
             $table->id();
-            $table->string('numero_commande', 50)->unique();
-            $table->foreignId('client_id')->nullable()->constrained('clients');
-            $table->foreignId('utilisateur_id')->nullable()->constrained('utilisateurs');
-            $table->decimal('total_ht', 12, 2);
-            $table->decimal('total_ttc', 12, 2);
-            $table->decimal('frais_livraison', 12, 2)->default(0);
-            $table->enum('statut_paiement', ['attente', 'paye', 'annule', 'rembourse'])->default('attente');
-            $table->enum('statut_livraison', ['preparation', 'expedie', 'livre'])->default('preparation');
-            $table->string('mode_paiement', 100)->nullable();
-            $table->timestamp('date_vente')->useCurrent();
-            $table->timestamps();
+            $table->foreignId('sale_id')->constrained()->onDelete('cascade');
+            $table->foreignId('product_id')->constrained();
+            $table->integer('quantity');
+            $table->decimal('unit_price', 15, 2);
+            $table->decimal('total_item_price', 15, 2); // Quantité x Prix unitaire
         });
 
-        Schema::create('vente_lignes', function (Blueprint $table) {
+        Schema::connection('mysql_secondaire')->create('stock_movements', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('vente_id')->constrained('ventes')->onDelete('cascade');
-            $table->foreignId('produit_id')->constrained('produits');
-            $table->integer('quantite');
-            $table->decimal('prix_unitaire', 12, 2);
-            $table->decimal('total_ligne', 12, 2);
-        });
-
-        Schema::create('mouvements_stock', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('produit_id')->constrained('produits')->onDelete('cascade');
-            $table->integer('quantite');
-            $table->enum('type', ['vente', 'achat', 'retour', 'perte', 'ajustement']);
-            $table->unsignedBigInteger('reference_id')->nullable();
-            $table->string('commentaire')->nullable();
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->integer('quantity');
+            $table->enum('type', ['in', 'out', 'adjustment']); // Entrée, Sortie, Ajustement
+            $table->string('reference_id')->nullable(); // ID de la vente ou code commande
+            $table->text('comment')->nullable();
             $table->timestamp('created_at')->useCurrent();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('mouvements_stock');
-        Schema::dropIfExists('vente_lignes');
-        Schema::dropIfExists('ventes');
-        Schema::dropIfExists('clients');
-        Schema::dropIfExists('produits');
-        Schema::dropIfExists('categories');
-        Schema::dropIfExists('utilisateurs');
+        Schema::connection('mysql_secondaire')->dropIfExists('stock_movements');
+        Schema::connection('mysql_secondaire')->dropIfExists('sale_items');
+        Schema::connection('mysql_secondaire')->dropIfExists('sales');
+        Schema::connection('mysql_secondaire')->dropIfExists('customers');
+        Schema::connection('mysql_secondaire')->dropIfExists('products');
+        Schema::connection('mysql_secondaire')->dropIfExists('categories');
+        Schema::connection('mysql_secondaire')->dropIfExists('users');
     }
 };

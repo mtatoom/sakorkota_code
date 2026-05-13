@@ -8,24 +8,28 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('tenants', function (Blueprint $table) {
-            $table->string('id', 191)->primary();
-            $table->string('nom_boutique');
+        // 1. Table des Tenants (Boutiques clientes)
+        Schema::connection('mysql')->create('tenants', function (Blueprint $table) {
+            $table->string('id', 191)->primary(); // ex: 'atyket'
+            $table->string('name'); // Ancien 'nom_boutique'
             $table->string('db_name');
-            $table->string('db_username')->nullable();
+            $table->string('db_username')->default('root');
             $table->string('db_password')->nullable();
-            $table->string('plan_abonnement', 50)->nullable();
+            $table->string('subscription_plan', 50)->default('free');
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
 
-        Schema::create('domaines', function (Blueprint $table) {
+        // 2. Table des Domaines
+        Schema::connection('mysql')->create('domains', function (Blueprint $table) {
             $table->id();
-            $table->string('domaine', 191)->unique();
+            $table->string('domain', 191)->unique(); // Ancien 'domaine'
             $table->string('tenant_id', 191);
             $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
         });
 
-        Schema::create('sessions', function (Blueprint $table) {
+        // 3. Table des Sessions (Standard Laravel)
+        Schema::connection('mysql')->create('sessions', function (Blueprint $table) {
             $table->string('id', 191)->primary();
             $table->foreignId('user_id')->nullable()->index();
             $table->string('ip_address', 45)->nullable();
@@ -37,8 +41,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('domaines');
-        Schema::dropIfExists('tenants');
-        Schema::dropIfExists('sessions');
+        Schema::connection('mysql')->dropIfExists('domains');
+        Schema::connection('mysql')->dropIfExists('tenants');
+        Schema::connection('mysql')->dropIfExists('sessions');
     }
 };

@@ -9,35 +9,21 @@ composer install
 php artisan key:generate
 
 # 3. Créer les tables Landlord (Centrale)
-
 php artisan migrate --path=database/migrations/landlord --database=mysql
 
 # 4. Créer les tables Tenant (Boutique modèle)
-
-## php artisan migrate --path=database/migrations/tenant --database=mysql_secondaire
+php artisan migrate --path=database/migrations/tenant --database=mysql_secondaire
 
 # pour chaque table, il faut créer un model
-
-# Pour le Landlord (Base centrale)
+# Modèles pour la base Landlord (Centrale)
 php artisan make:model Tenant
-php artisan make:model Domaine
+php artisan make:model Domain
 
-# Pour le Tenant (Base boutique)
-php artisan make:model Utilisateur
-php artisan make:model Categorie
-php artisan make:model Produit
-php artisan make:model Client
-php artisan make:model Vente
-php artisan make:model VenteLigne
-php artisan make:model MouvementStock
-
-# Il faut bien préciser la connexion par défaut dans app/Models/Tenant.php
-
-mysql ou mysql_secondaire
-protected $connection ='mysql'
-
-# lister les champs que Laravel a le droit de remplir
-
-protected $fillable = ['id','nom_boutique',db_name, db_password]
-# il faut forcer le nom de table
-protected $table=ma_boutique
+# Modèles pour la base Tenant (Boutique)
+php artisan make:model User
+php artisan make:model Category
+php artisan make:model Product
+php artisan make:model Customer
+php artisan make:model Sale
+php artisan make:model SaleItem
+php artisan make:model StockMovement
