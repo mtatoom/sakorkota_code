@@ -1,121 +1,233 @@
-SET NAMES utf8mb4;
-SET FOREIGN_KEY_CHECKS = 0;
+-- phpMyAdmin SQL Dump
+-- version 5.2.3
+-- https://www.phpmyadmin.net/
+--
+-- Hôte : 127.0.0.1:3306
+-- Généré le : mer. 13 mai 2026 à 12:21
+-- Version du serveur : 8.4.7
+-- Version de PHP : 8.4.15
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Base de données : `bdd_tenant`
+--
 
 -- --------------------------------------------------------
--- Table : utilisateurs
--- Rôle : Gestion des accès employés.
--- --------------------------------------------------------
-CREATE TABLE `utilisateurs` (
-  `id` bigint UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  `nom` varchar(255) NOT NULL,
-  `email` varchar(255) NOT NULL UNIQUE,
-  `mot_de_passe` varchar(255) NOT NULL,
-  `role` ENUM('admin', 'manager', 'vendeur') DEFAULT 'vendeur',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- --------------------------------------------------------
--- Table : categories
--- Rôle : Classification hiérarchique (ex: Mode > Chaussures).
--- --------------------------------------------------------
-CREATE TABLE `categories` (
-  `id` bigint UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  `parent_id` bigint UNSIGNED DEFAULT NULL, -- Pour les sous-catégories
-  `nom` varchar(100) NOT NULL,               -- ex: "Chaussures", "Scolaire"
-  `slug` varchar(150) UNIQUE,                -- ex: "chaussures-femmes"
-  `description` text DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  CONSTRAINT `fk_cat_parent` FOREIGN KEY (`parent_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+--
+-- Structure de la table `categories`
+--
 
--- --------------------------------------------------------
--- Table : produits
--- Rôle : Catalogue d'articles avec gestion de la cible (Homme/Femme).
--- --------------------------------------------------------
-CREATE TABLE `produits` (
-  `id` bigint UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  `categorie_id` bigint UNSIGNED DEFAULT NULL,
-  `sku` varchar(50) NOT NULL UNIQUE,        -- Référence unique (ex: CH-001)
-  `nom` varchar(255) NOT NULL,
-  `description` text NULL,
-  -- La cible permet de filtrer (Homme, Femme, Enfant) sans multiplier les catégories
-  `cible` ENUM('Homme', 'Femme', 'Enfant', 'Bébé', 'Mixte') DEFAULT 'Mixte',
-  `prix_achat` decimal(12, 2) DEFAULT 0,    -- Pour calculer la marge
-  `prix_vente` decimal(12, 2) NOT NULL,
-  `quantite_stock` int NOT NULL DEFAULT 0,
-  `seuil_alerte` int DEFAULT 5,             -- Alerte rupture de stock
-  `est_actif` boolean DEFAULT true,
+DROP TABLE IF EXISTS `categories`;
+CREATE TABLE IF NOT EXISTS `categories` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `parent_id` bigint UNSIGNED DEFAULT NULL,
+  `name` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `slug` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  CONSTRAINT `fk_prod_cat` FOREIGN KEY (`categorie_id`) REFERENCES `categories` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `categories_slug_unique` (`slug`),
+  KEY `categories_parent_id_foreign` (`parent_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
--- Table : clients
--- Rôle : Fichier client (CRM).
--- --------------------------------------------------------
-CREATE TABLE `clients` (
-  `id` bigint UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  `nom_complet` varchar(255) NOT NULL,
-  `telephone` varchar(20) DEFAULT NULL,
-  `email` varchar(255) DEFAULT NULL,
-  `adresse` text DEFAULT NULL,
-  `total_depense` decimal(12, 2) DEFAULT 0, -- Pour la fidélité
+
+--
+-- Structure de la table `customers`
+--
+
+DROP TABLE IF EXISTS `customers`;
+CREATE TABLE IF NOT EXISTS `customers` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `phone` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `email` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `address` text COLLATE utf8mb4_unicode_ci,
+  `total_spent` decimal(15,2) NOT NULL DEFAULT '0.00',
   `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
--- Table : ventes
--- Rôle : En-tête de facture / Commande.
+
+--
+-- Structure de la table `migrations`
+--
+
+DROP TABLE IF EXISTS `migrations`;
+CREATE TABLE IF NOT EXISTS `migrations` (
+  `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
+  `migration` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `batch` int NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
+
+--
+-- Déchargement des données de la table `migrations`
+--
+
+INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
+(1, '2026_01_01_000002_create_tenant_tables', 1);
+
 -- --------------------------------------------------------
-CREATE TABLE `ventes` (
-  `id` bigint UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  `numero_commande` varchar(50) UNIQUE,     -- ex: CMD-2024-0001
-  `client_id` bigint UNSIGNED DEFAULT NULL,
-  `utilisateur_id` bigint UNSIGNED DEFAULT NULL, -- Vendeur ayant fait la saisie
-  `total_ht` decimal(12, 2) NOT NULL,
-  `total_ttc` decimal(12, 2) NOT NULL,
-  `frais_livraison` decimal(12, 2) DEFAULT 0,
-  `statut_paiement` ENUM('attente', 'paye', 'annule', 'rembourse') DEFAULT 'attente',
-  `statut_livraison` ENUM('preparation', 'expedie', 'livre') DEFAULT 'preparation',
-  `mode_paiement` varchar(100),             -- ex: "Cash", "Orange Money"
-  `date_vente` timestamp DEFAULT CURRENT_TIMESTAMP,
+
+--
+-- Structure de la table `products`
+--
+
+DROP TABLE IF EXISTS `products`;
+CREATE TABLE IF NOT EXISTS `products` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `category_id` bigint UNSIGNED NOT NULL,
+  `sku` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci,
+  `target` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `purchase_price` decimal(15,2) NOT NULL,
+  `sale_price` decimal(15,2) NOT NULL,
+  `stock_quantity` int NOT NULL DEFAULT '0',
+  `alert_threshold` int NOT NULL DEFAULT '5',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
   `created_at` timestamp NULL DEFAULT NULL,
-  CONSTRAINT `fk_vente_client` FOREIGN KEY (`client_id`) REFERENCES `clients` (`id`),
-  CONSTRAINT `fk_vente_user` FOREIGN KEY (`utilisateur_id`) REFERENCES `utilisateurs` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `products_sku_unique` (`sku`),
+  KEY `products_category_id_foreign` (`category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
--- Table : vente_lignes
--- Rôle : Détails des articles vendus (remplace le JSON panier).
--- --------------------------------------------------------
-CREATE TABLE `vente_lignes` (
-  `id` bigint UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  `vente_id` bigint UNSIGNED NOT NULL,
-  `produit_id` bigint UNSIGNED NOT NULL,
-  `quantite` int NOT NULL,
-  `prix_unitaire` decimal(12, 2) NOT NULL,  -- Prix au moment de la vente
-  `total_ligne` decimal(12, 2) NOT NULL,    -- quantite * prix_unitaire
-  CONSTRAINT `fk_ligne_vente` FOREIGN KEY (`vente_id`) REFERENCES `ventes` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_ligne_produit` FOREIGN KEY (`produit_id`) REFERENCES `produits` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Structure de la table `sales`
+--
+
+DROP TABLE IF EXISTS `sales`;
+CREATE TABLE IF NOT EXISTS `sales` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `order_number` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `customer_id` bigint UNSIGNED NOT NULL,
+  `user_id` bigint UNSIGNED NOT NULL,
+  `total_excl_tax` decimal(15,2) NOT NULL,
+  `total_incl_tax` decimal(15,2) NOT NULL,
+  `delivery_fees` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `payment_status` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `delivery_status` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `payment_method` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `sale_date` datetime NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `sales_order_number_unique` (`order_number`),
+  KEY `sales_customer_id_foreign` (`customer_id`),
+  KEY `sales_user_id_foreign` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
--- Table : mouvements_stock
--- Rôle : Journal d'audit pour chaque article entrant ou sortant.
--- --------------------------------------------------------
-CREATE TABLE `mouvements_stock` (
-  `id` bigint UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  `produit_id` bigint UNSIGNED NOT NULL,
-  `quantite` int NOT NULL,                 -- Positif (achat) ou Négatif (vente)
-  `type` ENUM('vente', 'achat', 'retour', 'perte', 'ajustement') NOT NULL,
-  `reference_id` bigint UNSIGNED DEFAULT NULL, -- ID de la vente ou du bon d'achat lié
-  `commentaire` varchar(255) DEFAULT NULL,
-  `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT `fk_stock_produit` FOREIGN KEY (`produit_id`) REFERENCES `produits` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-SET FOREIGN_KEY_CHECKS = 1;
+--
+-- Structure de la table `sale_items`
+--
+
+DROP TABLE IF EXISTS `sale_items`;
+CREATE TABLE IF NOT EXISTS `sale_items` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `sale_id` bigint UNSIGNED NOT NULL,
+  `product_id` bigint UNSIGNED NOT NULL,
+  `quantity` int NOT NULL,
+  `unit_price` decimal(15,2) NOT NULL,
+  `total_item_price` decimal(15,2) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `sale_items_sale_id_foreign` (`sale_id`),
+  KEY `sale_items_product_id_foreign` (`product_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `stock_movements`
+--
+
+DROP TABLE IF EXISTS `stock_movements`;
+CREATE TABLE IF NOT EXISTS `stock_movements` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `product_id` bigint UNSIGNED NOT NULL,
+  `quantity` int NOT NULL,
+  `type` enum('in','out','adjustment') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `reference_id` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `comment` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `stock_movements_product_id_foreign` (`product_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `users`
+--
+
+DROP TABLE IF EXISTS `users`;
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `password` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `role` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'vendeur',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `users_email_unique` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
+
+--
+-- Contraintes pour les tables déchargées
+--
+
+--
+-- Contraintes pour la table `categories`
+--
+ALTER TABLE `categories`
+  ADD CONSTRAINT `categories_parent_id_foreign` FOREIGN KEY (`parent_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `products`
+--
+ALTER TABLE `products`
+  ADD CONSTRAINT `products_category_id_foreign` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `sales`
+--
+ALTER TABLE `sales`
+  ADD CONSTRAINT `sales_customer_id_foreign` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`),
+  ADD CONSTRAINT `sales_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
+
+--
+-- Contraintes pour la table `sale_items`
+--
+ALTER TABLE `sale_items`
+  ADD CONSTRAINT `sale_items_product_id_foreign` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`),
+  ADD CONSTRAINT `sale_items_sale_id_foreign` FOREIGN KEY (`sale_id`) REFERENCES `sales` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `stock_movements`
+--
+ALTER TABLE `stock_movements`
+  ADD CONSTRAINT `stock_movements_product_id_foreign` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
