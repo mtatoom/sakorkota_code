@@ -6,5 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Domain extends Model
 {
-    //
+    protected $connection = 'mysql';
+    public $timestamps = false;
+    protected $fillable = ['domain', 'tenant_id'];
+
+    public function tenant() { return $this->belongsTo(Tenant::class); }
 }
