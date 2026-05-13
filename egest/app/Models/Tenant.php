@@ -24,5 +24,8 @@ class Tenant extends Model
     /**
      * Relation: un client peut avoir plusieurs nom de domaine
      */
-    
+    public function domaines()
+    {
+        return $this->hasMany(Domaine::class);
+    }
 }
