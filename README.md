@@ -65,6 +65,11 @@ App\Models\Domain::create([
     'tenant_id' => 'atyket'
 ]);
 
+App\Models\Domain::create([
+    'domain' => 'zara.localhost',
+    'tenant_id' => 'zara'
+]);
+
 # Configurer ton environnement local (Hosts)
 Ton navigateur ne sait pas que atyket.localhost doit pointer vers ton ordinateur. Sur Windows, il faut modifier le fichier hosts.
 
@@ -74,6 +79,7 @@ Ouvre le fichier : C:\Windows\System32\drivers\etc\hosts.
 
 Ajoute cette ligne à la fin :
 127.0.0.1 atyket.localhost
+ou 127.0.0.1 zara.gestion
 
 # Tester la connexion dynamique
 Créons une route rapide pour vérifier que Laravel change bien de base de données selon l'URL.
