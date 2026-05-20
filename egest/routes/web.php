@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -58,6 +59,13 @@ Route::middleware(['tenant'])->group(function () {
         ]);
     });
     //*******************************************************/
+
+    // Ta route de test précédente
+    Route::get('/add-product', function () { /* ... */
+    });
+
+    // La nouvelle route pour afficher la liste
+    Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 });
 
 
