@@ -31,7 +31,7 @@ Route::middleware(['tenant'])->group(function () {
 
     //********************************************************/
     // Route temporaire pour vérifier la connexion à la base de données du tenant
-    Route::get('/add-product', function () {
+    /*     Route::get('/add-product', function () {
         // 1. S'assurer qu'une catégorie existe (obligatoire : NOT NULL)
         $category = App\Models\Category::firstOrCreate([
             'name' => 'Vêtements',
@@ -42,10 +42,10 @@ Route::middleware(['tenant'])->group(function () {
         $product = App\Models\Product::create([
             'category_id'    => $category->id,
             'sku'            => 'PROD-' . strtoupper(Str::random(5)),
-            'name'           => 'Smartphone Test ' . request()->getHost(),
-            'description'    => 'Chemise manche courte',
-            'purchase_price' => 20000, // Obligatoire : NOT NULL
-            'sale_price'     => 10000,  // Obligatoire : NOT NULL
+            'name'           => 'Eau minérale' . request()->getHost(),
+            'description'    => 'Volnic 1L',
+            'purchase_price' => 1500, // Obligatoire : NOT NULL
+            'sale_price'     => 2000,  // Obligatoire : NOT NULL
             'stock_quantity' => 10,
             'alert_threshold' => 3,
             'is_active'      => true,
@@ -57,7 +57,7 @@ Route::middleware(['tenant'])->group(function () {
             'base_de_données' => DB::connection('mysql_secondaire')->getDatabaseName(),
             'produit'  => $product->name
         ]);
-    });
+    }); */
     //*******************************************************/
 
     // Ta route de test précédente
