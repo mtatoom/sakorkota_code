@@ -12,7 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-       // C'est ICI qu'on enregistre l'alias
+        // C'est ICI qu'on enregistre l'alias pour tes routes
         $middleware->alias([
             'tenant' => IdentifyTenant::class,
         ]);

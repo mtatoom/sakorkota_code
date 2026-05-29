@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CategoryController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
@@ -21,51 +22,25 @@ Route::middleware('auth')->group(function () {
 });
 
 
-Route::middleware(['tenant'])->group(function () {
-    Route::get('/test-db', function () {
-        return response()->json([
-            'status' => 'success',
-            'database' => DB::connection('mysql_secondaire')->getDatabaseName()
-        ]);
-    });
-
-    //********************************************************/
-    // Route temporaire pour vérifier la connexion à la base de données du tenant
-    /*     Route::get('/add-product', function () {
-        // 1. S'assurer qu'une catégorie existe (obligatoire : NOT NULL)
-        $category = App\Models\Category::firstOrCreate([
-            'name' => 'Vêtements',
-            'slug' => 'vetements',
-        ]);
-
-        // 2. Création du produit avec tous les champs obligatoires
-        $product = App\Models\Product::create([
-            'category_id'    => $category->id,
-            'sku'            => 'PROD-' . strtoupper(Str::random(5)),
-            'name'           => 'Eau minérale' . request()->getHost(),
-            'description'    => 'Volnic 1L',
-            'purchase_price' => 1500, // Obligatoire : NOT NULL
-            'sale_price'     => 2000,  // Obligatoire : NOT NULL
-            'stock_quantity' => 10,
-            'alert_threshold' => 3,
-            'is_active'      => true,
-        ]);
-
-        return response()->json([
-            'message'  => 'Produit créé !',
-            'boutique' => request()->getHost(),
-            'base_de_données' => DB::connection('mysql_secondaire')->getDatabaseName(),
-            'produit'  => $product->name
-        ]);
-    }); */
-    //*******************************************************/
-
-    // Ta route de test précédente
-    Route::get('/add-product', function () { /* ... */
-    });
-
-    // La nouvelle route pour afficher la liste
+Route::middleware(['web', 'tenant'])->group(function () {
+    // 1. Routes classiques
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+    Route::get('/add-product', [ProductController::class, 'create'])->name('products.create');
+    Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+
+    // 2. ROUTE ACTIONS GROUPÉES (À placer impérativement AVANT les routes avec paramètres dynamiques)
+    Route::delete('/products-mass-delete', [ProductController::class, 'destroyMass'])->name('products.destroyMass');
+
+    // 3. Routes avec paramètres dynamiques {product}
+    Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
+    Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
+    Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+
+    // Routes Catégories
+    Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+    Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 });
 
 

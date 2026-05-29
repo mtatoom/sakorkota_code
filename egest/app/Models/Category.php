@@ -3,21 +3,25 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
 {
+    // Connexion Tenant dynamique
     protected $connection = 'mysql_secondaire';
 
-    protected $fillable = ['parent_id', 'name', 'slug', 'description'];
+    protected $fillable = [
+        'parent_id',
+        'name',
+        'slug',
+        'description'
+    ];
 
-    public function products()
+    /**
+     * Une catégorie a plusieurs produits
+     */
+    public function products(): HasMany
     {
-        return $this->hasMany(Product::class);
-    }
-
-    // Relation pour gérer les sous-catégories si besoin
-    public function children()
-    {
-        return $this->hasMany(Category::class, 'parent_id');
+        return $this->hasMany(Product::class, 'category_id');
     }
 }
