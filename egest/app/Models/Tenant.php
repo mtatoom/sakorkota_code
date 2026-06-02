@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Artisan;
 
 class Tenant extends Model
 {
+    // Reste sur mysql car la création d'une boutique se fait depuis la plateforme globale
     protected $connection = 'mysql';
     protected $keyType = 'string';
     public $incrementing = false;
@@ -28,21 +29,16 @@ class Tenant extends Model
         return $this->hasMany(Domain::class);
     }
 
-    //*********** AUTO-GÉNÉRATION ET CRÉATION DE BDD ********************/
     protected static function booted()
     {
-        // 1. Avant la création : Génération automatique des données techniques
         static::creating(function ($tenant) {
-            // Si l'id n'est pas fourni, on utilise le slug du nom de l'entreprise (ex: "Ma Bijouterie" -> "ma-bijouterie")
             if (empty($tenant->id)) {
                 $tenant->id = Str::slug($tenant->name);
             }
 
-            // Génération du nom de la base de données avec le préfixe "venduix_"
             $cleanSlug = str_replace('-', '_', $tenant->id);
             $tenant->db_name = 'venduix_' . $cleanSlug;
 
-            // Remplissage des identifiants par défaut s'ils sont vides
             if (empty($tenant->db_username)) {
                 $tenant->db_username = config('database.connections.mysql.username');
             }
@@ -55,20 +51,24 @@ class Tenant extends Model
             }
         });
 
-        // 2. Après la création : Initialisation physique de la base de données du client
         static::created(function ($tenant) {
             if ($tenant->db_name) {
                 // A. Créer la base de données brute
                 DB::statement("CREATE DATABASE IF NOT EXISTS `{$tenant->db_name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;");
 
-                // B. Configurer dynamiquement la connexion secondaire
+                // B. Configuration de la connexion secondaire temporaire pour exécuter la migration du client
                 config(['database.connections.mysql_secondaire.database' => $tenant->db_name]);
-                DB::purge('mysql_secondaire');
 
-                // C. Lancer les migrations
+                DB::disconnect('mysql_secondaire');
+                DB::purge('mysql_secondaire');
+                DB::reconnect('mysql_secondaire');
+
+                // C. Lancement des migrations spécifiques au tenant
                 Artisan::call('migrate', [
-                    '--database' => 'mysql_secondaire',
-                    '--force'    => true,
+                    '--database'       => 'mysql_secondaire',
+                    '--path'           => 'database/migrations/tenant', // <-- S'assurer de ne migrer QUE le dossier tenant
+                    '--force'          => true,
+                    '--no-interaction' => true,
                 ]);
             }
         });

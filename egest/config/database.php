@@ -20,6 +20,9 @@ return [
             'transaction_mode' => 'DEFERRED',
         ],
 
+        // AJOUTE CETTE CONNEXION DÉDIÉE :
+
+
         'mysql' => [ // CONNEXION LANDLORD
             'driver' => 'mysql',
             'url' => env('DB_URL'),
@@ -38,6 +41,21 @@ return [
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
+        ],
+
+        'mysql_landlord' => [
+            'driver' => 'mysql',
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => env('DB_DATABASE', 'bdd_landlord'), // Pointe toujours fixement sur le Landlord
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', ''),
+            'charset' => 'utf8mb4',
+            'default' => env('DB_CONNECTION', 'mysql'),
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
         ],
 
         'mysql_secondaire' => [ // CONNEXION TENANT

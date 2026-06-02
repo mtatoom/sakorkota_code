@@ -12,10 +12,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // C'est ICI qu'on enregistre l'alias pour tes routes
-        $middleware->alias([
-            'tenant' => IdentifyTenant::class,
+
+        // --- LA CORRECTION TECHNIQUE ICI ---
+        // On pousse le middleware au tout début (prepend) du groupe global 'web'
+        // pour qu'il intercepte le sous-domaine AVANT l'authentification et les sessions.
+        $middleware->web(prepend: [
+            IdentifyTenant::class,
         ]);
+
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

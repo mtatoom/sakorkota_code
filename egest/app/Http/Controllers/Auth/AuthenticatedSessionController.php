@@ -24,6 +24,8 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        // Le middleware ayant déjà basculé sur "venduix_minux",
+        // cette méthode va authentifier l'utilisateur sur la bonne base du client.
         $request->authenticate();
 
         $request->session()->regenerate();

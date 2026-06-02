@@ -7,18 +7,18 @@ use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Artisan;
 
 class RegisterTenantController extends Controller
 {
-    // Afficher le formulaire public sur la page d'accueil
     public function showForm()
     {
-        return view('welcome'); // Ou une vue dédiée à l'inscription
+        return view('welcome');
     }
 
     public function register(Request $request)
     {
-        // CORRECTION : Validation sur la colonne 'name' de la table tenants
+        // Validation des données d'inscription globale
         $request->validate([
             'company_name' => 'required|string|max:255|unique:tenants,name',
             'admin_name'   => 'required|string|max:255',
@@ -26,33 +26,52 @@ class RegisterTenantController extends Controller
             'password'     => 'required|string|min:8|confirmed',
         ]);
 
-        // 1. Créer le tenant (déclenche automatiquement l'événement booted() et crée la bdd venduix_...)
-        // CORRECTION : Assignation sur le champ 'name' attendu par ton $fillable
+        // 1. Créer le tenant (Déclenche uniquement la création de la base de données brute via le modèle)
         $tenant = Tenant::create([
             'name' => $request->company_name,
         ]);
 
-        // CORRECTION : Création du domaine associé dans ta table 'domains' du Landlord
+        // Création du domaine associé dans la base Landlord
         $tenant->domains()->create([
-            'domain' => $tenant->id . '.localhost', // Donne par exemple : ma-boutique.localhost
+            'domain' => $tenant->id . '.localhost',
         ]);
 
-        // 2. Se connecter temporairement à sa nouvelle base pour y injecter l'administrateur
+        // 2. Configuration dynamique de la connexion secondaire sur la nouvelle base du client
         config(['database.connections.mysql_secondaire.database' => $tenant->db_name]);
+
+        // On isole et réinitialise l'état de la connexion en mémoire pour éviter tout conflit
+        DB::disconnect('mysql_secondaire');
         DB::purge('mysql_secondaire');
+        DB::reconnect('mysql_secondaire');
 
-        // 3. Insérer l'utilisateur dans la table users du tenant
-        DB::connection('mysql_secondaire')->table('users')->insert([
-            'name'       => $request->admin_name,
-            'email'      => $request->admin_email,
-            'password'   => Hash::make($request->password),
-            'role'       => 'admin', // Configure le rôle en administrateur de boutique
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        try {
+            // 3. Exécuter les migrations en ciblant EXCLUSIVEMENT ton dossier 'tenant'
+            Artisan::call('migrate', [
+                '--database'       => 'mysql_secondaire',
+                '--path'           => 'database/migrations/tenant', // <-- Cible ton sous-dossier d'infrastructure client
+                '--force'          => true,                         // Évite les demandes de confirmation en arrière-plan
+                '--no-interaction' => true,                         // Désactive le verrouillage interactif
+            ]);
 
-        // 4. Redirection vers son espace dédié avec son sous-domaine tout neuf !
-        // CORRECTION : Utilisation de $tenant->id (qui contient le slug propre) suivi de ton hôte local
+            // Sécurité : Forcer le rafraîchissement des métadonnées de tables fraîchement créées
+            DB::connection('mysql_secondaire')->reconnect();
+
+            // 4. Insérer l'administrateur dans la table 'users' du tenant (qui vient d'être migrée)
+            DB::connection('mysql_secondaire')->table('users')->insert([
+                'name'       => $request->admin_name,
+                'email'      => $request->admin_email,
+                'password'   => Hash::make($request->password),
+                'role'       => 'admin',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+        } catch (\Exception $e) {
+            // Permet de remonter précisément l'erreur si une ligne plante dans le processus interne
+            throw $e;
+        }
+
+        // 5. Redirection vers le sous-domaine de l'espace client sur le port 8000
         $redirectUrl = "http://" . $tenant->id . ".localhost:8000/login";
 
         return redirect()->away($redirectUrl)->with('success', 'Votre espace de gestion a été configuré avec succès !');

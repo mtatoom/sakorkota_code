@@ -10,7 +10,9 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    protected $connection = 'mysql_secondaire';
+    // REMARQUE : Plus besoin de spécifier 'mysql_secondaire'.
+    // Le modèle utilisera dynamiquement la connexion 'mysql' par défaut,
+    // que le middleware aura configurée sur la base du tenant (ex: venduix_minux).
 
     protected $fillable = [
         'name',
@@ -23,4 +25,12 @@ class User extends Authenticatable
         'password',
         'remember_token'
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
 }

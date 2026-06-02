@@ -28,7 +28,7 @@ return new class extends Migration
             $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
         });
 
-        // 3. Table des Sessions (Standard Laravel)
+/*         // 3. Table des Sessions (Standard Laravel)
         Schema::connection('mysql')->create('sessions', function (Blueprint $table) {
             $table->string('id', 191)->primary();
             $table->foreignId('user_id')->nullable()->index();
@@ -36,7 +36,7 @@ return new class extends Migration
             $table->text('user_agent')->nullable();
             $table->longText('payload');
             $table->integer('last_activity')->index();
-        });
+        }); */
     }
 
     public function down(): void

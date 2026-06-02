@@ -10,15 +10,17 @@ use Symfony\Component\HttpFoundation\Response;
 
 class IdentifyTenant
 {
-    /**
-     * Gère la requête entrante et connecte la BDD tenant.
-     */
     public function handle(Request $request, Closure $next): Response
     {
-        $host = $request->getHost(); // Récupère 'zara.localhost'
+        $host = $request->getHost();
 
-        // 1. Recherche du domaine dans la table 'domains' (Bdd Landlord / connexion 'mysql')
-        $domain = DB::connection('mysql')
+        // 1. SÉCURITÉ : Ignorer la racine de la plateforme
+        if ($host === 'localhost' || $host === '127.0.0.1') {
+            return $next($request);
+        }
+
+        // 2. RECHERCHE ISOLÉE : On utilise 'mysql_landlord' pour ne pas corrompre 'mysql'
+        $domain = DB::connection('mysql_landlord')
             ->table('domains')
             ->where('domain', $host)
             ->first();
@@ -27,27 +29,22 @@ class IdentifyTenant
             abort(404, "Aucune boutique enregistrée avec le domaine : " . $host);
         }
 
-        // 2. Récupération du tenant lié via 'tenant_id'
-        $tenant = DB::connection('mysql')
+        $tenant = DB::connection('mysql_landlord')
             ->table('tenants')
             ->where('id', $domain->tenant_id)
             ->first();
 
-        if (!$tenant) {
-            abort(404, "Le compte de la boutique est introuvable.");
+        if (!$tenant || !$tenant->is_active) {
+            abort(403, "Cette boutique est indisponible.");
         }
 
-        if (!$tenant->is_active) {
-            abort(403, "Cette boutique (Tenant) est actuellement désactivée.");
-        }
+        // 3. BASCULEMENT UNIQUE : On configure la connexion par défaut 'mysql' pour le reste du cycle
+        Config::set('database.connections.mysql.database', $tenant->db_name);
+        Config::set('database.connections.mysql.username', $tenant->db_username ?? 'root');
+        Config::set('database.connections.mysql.password', $tenant->db_password ?? '');
 
-        // 3. Configuration dynamique de la connexion 'mysql_secondaire'
-        Config::set('database.connections.mysql_secondaire.database', $tenant->db_name);
-        Config::set('database.connections.mysql_secondaire.username', $tenant->db_username ?? 'root');
-        Config::set('database.connections.mysql_secondaire.password', $tenant->db_password ?? '');
-
-        // 4. Purge pour appliquer les nouveaux accès
-        DB::purge('mysql_secondaire');
+        // Déconnexion pour forcer la reconnexion au prochain appel sur la bonne BDD
+        DB::disconnect('mysql');
 
         return $next($request);
     }
