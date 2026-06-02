@@ -22,6 +22,9 @@ class Product extends Model
         'target', // Présent dans ton schéma d'origine
         'purchase_price',
         'sale_price',
+        'promo_price',       // Nouveau : Prix promotionnel
+        'promo_start_at',    // Nouveau : Date de début de la promo
+        'promo_end_at',      // Nouveau : Date de fin de la promo
         'stock_quantity',
         'alert_threshold',
         'is_active'
@@ -30,10 +33,41 @@ class Product extends Model
     protected $casts = [
         'purchase_price' => 'float',
         'sale_price' => 'float',
+        'promo_price' => 'float',
+        'promo_start_at' => 'datetime', // Convertit automatiquement en objet Carbon
+        'promo_end_at' => 'datetime',   // Convertit automatiquement en objet Carbon
         'stock_quantity' => 'integer',
         'alert_threshold' => 'integer',
         'is_active' => 'boolean'
     ];
+
+    /**
+     * Accesseur pour obtenir le prix actuel (normal ou promo si active)
+     * S'utilise partout dans tes vues via : $product->current_price
+     */
+    public function getCurrentPriceAttribute(): float
+    {
+        $now = now(); // Date et heure actuelles de Madagascar
+
+        // On vérifie si une promo est configurée et si on est dans la période définie
+        if ($this->promo_price !== null &&
+            $this->promo_start_at && $this->promo_start_at->isPast() &&
+            $this->promo_end_at && $this->promo_end_at->isFuture()) {
+            return $this->promo_price;
+        }
+
+        // Sinon, retourne le prix standard
+        return $this->sale_price;
+    }
+
+    /**
+     * Vérifie en un clin d'œil si le produit est en promotion active
+     * S'utilise partout dans ton code via : $product->is_on_promo
+     */
+    public function getIsOnPromoAttribute(): bool
+    {
+        return $this->current_price === $this->promo_price;
+    }
 
     /**
      * Relation avec la catégorie du produit

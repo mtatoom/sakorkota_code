@@ -25,6 +25,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->timestamps();
         });
+
         Schema::connection('mysql_secondaire')->create('customers', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -37,19 +38,26 @@ return new class extends Migration
 
         Schema::connection('mysql_secondaire')->create('products', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('category_id')->constrained()->onDelete('cascade');
+            // Changement en nullable pour préserver le produit si la catégorie est supprimée
+            $table->foreignId('category_id')->nullable()->constrained()->onDelete('set null');
             $table->string('sku')->unique();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->string('target')->nullable(); // Ancien 'cible'
+            $table->string('target')->nullable();
             $table->decimal('purchase_price', 15, 2);
             $table->decimal('sale_price', 15, 2);
+
+            // --- NOUVEAU : Intégration des colonnes pour la gestion des promotions ---
+            $table->decimal('promo_price', 15, 2)->nullable();
+            $table->dateTime('promo_start_at')->nullable();
+            $table->dateTime('promo_end_at')->nullable();
+            // ------------------------------------------------------------------------
+
             $table->integer('stock_quantity')->default(0);
             $table->integer('alert_threshold')->default(5);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
-
 
         Schema::connection('mysql_secondaire')->create('sales', function (Blueprint $table) {
             $table->id();
@@ -65,7 +73,7 @@ return new class extends Migration
             $table->dateTime('sale_date');
             $table->timestamps();
         });
-        
+
         Schema::connection('mysql_secondaire')->create('sale_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('sale_id')->constrained()->onDelete('cascade');

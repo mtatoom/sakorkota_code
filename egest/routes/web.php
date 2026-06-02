@@ -30,6 +30,8 @@ Route::middleware(['web', 'tenant'])->group(function () {
 
     // 2. ROUTE ACTIONS GROUPÉES (À placer impérativement AVANT les routes avec paramètres dynamiques)
     Route::delete('/products-mass-delete', [ProductController::class, 'destroyMass'])->name('products.destroyMass');
+    Route::post('/products-mass-promo', [ProductController::class, 'promoMass'])->name('products.promoMass');
+    Route::post('/products-mass-cancel-promo', [ProductController::class, 'cancelPromoMass'])->name('products.cancelPromoMass');
 
     // 3. Routes avec paramètres dynamiques {product}
     Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');

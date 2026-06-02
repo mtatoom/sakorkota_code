@@ -39,16 +39,43 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3.5">
-                    <div>
-                        <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Prix d'Achat (Ar)</label>
-                        <input type="number" name="purchase_price" required placeholder="15000"
-                            class="w-full px-3 py-1.5 bg-slate-900/50 border border-slate-800/80 text-xs rounded-lg text-slate-200 tabular-nums focus:outline-hidden focus:border-blue-500/40">
+                <div class="p-3 bg-slate-950/40 border border-slate-800/50 rounded-xl space-y-3.5">
+                    <div class="grid grid-cols-2 gap-3.5">
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Prix d'Achat (Ar)</label>
+                            <input type="number" name="purchase_price" required placeholder="15000" step="0.01"
+                                class="w-full px-3 py-1.5 bg-slate-900/50 border border-slate-800/80 text-xs rounded-lg text-slate-200 tabular-nums focus:outline-hidden focus:border-blue-500/40">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Prix de Vente Normal (Ar)</label>
+                            <input type="number" name="sale_price" required placeholder="25000" step="0.01"
+                                class="w-full px-3 py-1.5 bg-slate-900/50 border border-slate-800/80 text-xs rounded-lg text-slate-200 tabular-nums focus:outline-hidden focus:border-blue-500/40">
+                        </div>
                     </div>
+
                     <div>
-                        <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Prix de Vente (Ar)</label>
-                        <input type="number" name="sale_price" required placeholder="25000"
-                            class="w-full px-3 py-1.5 bg-slate-900/50 border border-slate-800/80 text-xs rounded-lg text-slate-200 tabular-nums focus:outline-hidden focus:border-blue-500/40">
+                        <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Prix Promotionnel (Ar) <span class="text-slate-600 lowercase font-normal">(Optionnel)</span></label>
+                        <input type="number" name="promo_price" placeholder="Ex: 20000" step="0.01"
+                            x-on:input="hasPromo = $el.value.length > 0"
+                            class="w-full px-3 py-1.5 bg-slate-900/50 border border-slate-800/80 text-xs rounded-lg text-slate-200 tabular-nums focus:outline-hidden focus:border-emerald-500/40">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3.5 pt-2 border-t border-slate-900"
+                         x-show="hasPromo"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 -translate-y-1"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         style="display: none;">
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Début de la promo</label>
+                            <input type="datetime-local" name="promo_start_at"
+                                class="w-full px-3 py-1.5 bg-slate-900/50 border border-slate-800/80 text-xs rounded-lg text-slate-300 focus:outline-hidden focus:border-blue-500/40">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Fin de la promo</label>
+                            <input type="datetime-local" name="promo_end_at"
+                                class="w-full px-3 py-1.5 bg-slate-900/50 border border-slate-800/80 text-xs rounded-lg text-slate-300 focus:outline-hidden focus:border-blue-500/40">
+                        </div>
                     </div>
                 </div>
 
@@ -59,7 +86,7 @@
                             class="w-full px-3 py-1.5 bg-slate-900/50 border border-slate-800/80 text-xs rounded-lg text-slate-200 focus:outline-hidden focus:border-blue-500/40">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1" >Seuil d'Alerte</label>
+                        <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Seuil d'Alerte</label>
                         <input type="number" name="alert_threshold" value="3" required
                             class="w-full px-3 py-1.5 bg-slate-900/50 border border-slate-800/80 text-xs rounded-lg text-slate-200 focus:outline-hidden focus:border-blue-500/40">
                     </div>
@@ -133,6 +160,7 @@
                 newCatDesc: '',
                 loading: false,
                 errorMessage: '',
+                hasPromo: false, // Suit l'état de la saisie d'un prix promotionnel
 
                 async submitCategory() {
                     if (!this.newCatName.trim()) {
@@ -150,13 +178,8 @@
                         });
 
                         if (response.data.success) {
-                            // 1. Injection immédiate de l'objet catégorie dans le tableau réactif d'Alpine
                             this.categories.push(response.data.category);
-
-                            // 2. Sélection automatique instantanée dans le DOM
                             this.selectedCategory = response.data.category.id;
-
-                            // 3. Reset et fermeture propre
                             this.newCatName = '';
                             this.newCatDesc = '';
                             this.openCategoryModal = false;

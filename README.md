@@ -1,5 +1,5 @@
 # sakorkota_code
-
+npm run dev-all
 # 1. Installer les dépendances PHP
 
 composer install

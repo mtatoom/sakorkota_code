@@ -4,7 +4,11 @@
         <p class="text-[11px] text-slate-500">Produit : <span class="text-blue-400 font-medium">{{ $product->name }}</span></p>
     </div>
 
-    <div class="max-w-xl" x-data="productForm({ categoriesList: {{ $categories->toJson() }}, defaultCategory: '{{ $product->category_id }}' })">
+    <div class="max-w-xl" x-data="productForm({
+        categoriesList: {{ $categories->toJson() }},
+        defaultCategory: '{{ $product->category_id }}',
+        hasPromoInitial: {{ $product->promo_price ? 'true' : 'false' }}
+    })">
 
         <div class="bg-[#090d16] rounded-xl border border-slate-800/80 shadow-2xl p-4">
             <form action="{{ route('products.update', $product->id) }}" method="POST" class="space-y-3.5">
@@ -40,16 +44,45 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3.5">
-                    <div>
-                        <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Prix d'Achat (Ar)</label>
-                        <input type="number" name="purchase_price" value="{{ $product->purchase_price }}" required placeholder="15000"
-                            class="w-full px-3 py-1.5 bg-slate-900/50 border border-slate-800/80 text-xs rounded-lg text-slate-200 tabular-nums focus:outline-hidden focus:border-blue-500/40">
+                <div class="p-3 bg-slate-950/40 border border-slate-800/50 rounded-xl space-y-3.5">
+                    <div class="grid grid-cols-2 gap-3.5">
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Prix d'Achat (Ar)</label>
+                            <input type="number" name="purchase_price" value="{{ $product->purchase_price }}" required placeholder="15000" step="0.01"
+                                class="w-full px-3 py-1.5 bg-slate-900/50 border border-slate-800/80 text-xs rounded-lg text-slate-200 tabular-nums focus:outline-hidden focus:border-blue-500/40">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Prix de Vente Normal (Ar)</label>
+                            <input type="number" name="sale_price" value="{{ $product->sale_price }}" required placeholder="25000" step="0.01"
+                                class="w-full px-3 py-1.5 bg-slate-900/50 border border-slate-800/80 text-xs rounded-lg text-slate-200 tabular-nums focus:outline-hidden focus:border-blue-500/40">
+                        </div>
                     </div>
+
                     <div>
-                        <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Prix de Vente (Ar)</label>
-                        <input type="number" name="sale_price" value="{{ $product->sale_price }}" required placeholder="25000"
-                            class="w-full px-3 py-1.5 bg-slate-900/50 border border-slate-800/80 text-xs rounded-lg text-slate-200 tabular-nums focus:outline-hidden focus:border-blue-500/40">
+                        <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Prix Promotionnel (Ar) <span class="text-slate-600 lowercase font-normal">(Optionnel)</span></label>
+                        <input type="number" name="promo_price" value="{{ $product->promo_price }}" placeholder="Ex: 20000" step="0.01"
+                            x-on:input="hasPromo = $el.value.length > 0"
+                            class="w-full px-3 py-1.5 bg-slate-900/50 border border-slate-800/80 text-xs rounded-lg text-slate-200 tabular-nums focus:outline-hidden focus:border-emerald-500/40">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3.5 pt-2 border-t border-slate-900"
+                         x-show="hasPromo"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 -translate-y-1"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         style="display: none;">
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Début de la promo</label>
+                            <input type="datetime-local" name="promo_start_at"
+                                value="{{ $product->promo_start_at ? $product->promo_start_at->format('Y-m-d\TH:i') : '' }}"
+                                class="w-full px-3 py-1.5 bg-slate-900/50 border border-slate-800/80 text-xs rounded-lg text-slate-300 focus:outline-hidden focus:border-blue-500/40">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Fin de la promo</label>
+                            <input type="datetime-local" name="promo_end_at"
+                                value="{{ $product->promo_end_at ? $product->promo_end_at->format('Y-m-d\TH:i') : '' }}"
+                                class="w-full px-3 py-1.5 bg-slate-900/50 border border-slate-800/80 text-xs rounded-lg text-slate-300 focus:outline-hidden focus:border-blue-500/40">
+                        </div>
                     </div>
                 </div>
 
@@ -134,6 +167,7 @@
                 newCatDesc: '',
                 loading: false,
                 errorMessage: '',
+                hasPromo: config.hasPromoInitial, // S'initialise à true si le produit a déjà une promo
 
                 async submitCategory() {
                     if (!this.newCatName.trim()) {
